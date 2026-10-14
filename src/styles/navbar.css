@@ -1,0 +1,102 @@
+/* Navbar */
+.navbar {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 48px);
+  max-width: 1200px;
+  z-index: 1000;
+  border-radius: 16px;
+  /* needed so the mobile dropdown positions relative to navbar */
+  isolation: isolate;
+}
+.navbar-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+}
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.logo-icon { font-size: 1.6rem; }
+.logo-text {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #E1EDF5;
+  letter-spacing: 0.01em;
+}
+.logo-accent { color: #8DD8FF; }
+
+.nav-links {
+  display: flex;
+  gap: 6px;
+  list-style: none;
+}
+.nav-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #8BA8C4;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.nav-link:hover { color: #E1EDF5; background: rgba(141,216,255,0.07); }
+.nav-link.active {
+  color: #8DD8FF;
+  background: rgba(141,216,255,0.1);
+  box-shadow: 0 0 10px rgba(141,216,255,0.15);
+}
+
+/* Hamburger */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+}
+.hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #8DD8FF;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+@media (max-width: 720px) {
+  .navbar { top: 8px; width: calc(100% - 24px); }
+  .hamburger { display: flex; }
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    background: rgba(5,11,24,0.97);
+    border: 1px solid rgba(141,216,255,0.18);
+    border-radius: 12px;
+    margin-top: 8px;
+    padding: 12px;
+    gap: 4px;
+  }
+  .nav-links.open { display: flex; }
+  .nav-link { padding: 10px 16px; }
+}

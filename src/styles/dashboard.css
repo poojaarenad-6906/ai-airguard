@@ -1,0 +1,85 @@
+/* Dashboard */
+.dashboard-section { padding-top: 100px; }
+
+.dash-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.dash-city {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dash-city h2 { margin-bottom: 0; }
+.city-flag { font-size: 1.4rem; }
+.dash-updated { color: #8BA8C4; font-size: 0.82rem; margin-top: 4px; }
+.dash-header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* Main AQI card */
+.dash-main-card {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  padding: 36px 40px;
+  margin-bottom: 36px;
+  flex-wrap: wrap;
+}
+.dash-main-left { flex: 0 0 auto; }
+.dash-main-right { flex: 1; min-width: 220px; }
+
+/* Gauge */
+.gauge-wrap { display: flex; flex-direction: column; align-items: center; }
+.gauge-svg { width: 160px; height: 160px; }
+.gauge-label {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-top: 6px;
+}
+
+/* AQI badge & description */
+.dash-aqi-badge { font-size: 0.88rem; margin-bottom: 14px; }
+.dash-aqi-desc { color: #8BA8C4; margin-bottom: 20px; line-height: 1.55; }
+
+/* AQI bar */
+.dash-aqi-bar-wrap {
+  display: flex;
+  gap: 4px;
+  height: 20px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.aqi-bar-seg {
+  flex: 1;
+  border-radius: 4px;
+  transition: transform 0.3s, opacity 0.3s;
+}
+.aqi-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: #8BA8C4;
+}
+
+/* Pollutants */
+.pollutants-title {
+  margin-bottom: 18px;
+  font-size: 1.1rem;
+}
+.pollutant-card {
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pollutant-icon { font-size: 1.4rem; }
+
+@media (max-width: 640px) {
+  .dash-main-card { flex-direction: column; padding: 24px 20px; gap: 24px; }
+  .gauge-svg { width: 130px; height: 130px; }
+}

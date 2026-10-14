@@ -1,0 +1,90 @@
+/* Smart Alerts */
+.primary-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 32px 36px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+  position: relative;
+  overflow: hidden;
+}
+.primary-alert::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  background: radial-gradient(circle at top right, currentColor, transparent 60%);
+  pointer-events: none;
+}
+
+/* Type tinting */
+.alert-info     { border-color: rgba(76,175,80,0.4) !important; }
+.alert-warning  { border-color: rgba(255,193,7,0.4) !important; }
+.alert-danger   { border-color: rgba(255,87,34,0.4) !important; }
+.alert-critical { border-color: rgba(183,28,28,0.5) !important; animation: glowPulse 2.5s ease-in-out infinite; }
+
+.primary-alert-icon { font-size: 3rem; flex-shrink: 0; }
+.primary-alert-body { flex: 1; }
+.primary-alert-body h3 { font-size: 1.4rem; margin-bottom: 6px; }
+.primary-alert-city { color: #8BA8C4; font-size: 0.88rem; margin-bottom: 16px; }
+.primary-alert-aqi {
+  font-size: 5rem;
+  font-weight: 900;
+  opacity: 0.25;
+  align-self: center;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.alert-tips {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.alert-tips li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #C9DFF0;
+}
+.alert-bullet { font-size: 1.1rem; font-weight: 800; }
+
+.alerts-subtitle { margin-bottom: 18px; font-size: 1.05rem; }
+
+.alerts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.alert-level-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 22px;
+  transition: all 0.3s;
+  position: relative;
+}
+.active-level {
+  box-shadow: 0 0 20px rgba(141,216,255,0.12);
+}
+.al-icon { font-size: 1.6rem; flex-shrink: 0; }
+.al-label { font-weight: 700; font-size: 0.92rem; margin-bottom: 3px; }
+.al-desc { color: #8BA8C4; font-size: 0.82rem; }
+.al-current-badge {
+  margin-left: auto;
+  padding: 4px 12px;
+  background: rgba(141,216,255,0.12);
+  border: 1px solid rgba(141,216,255,0.3);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #8DD8FF;
+}
+
+@media (max-width: 600px) {
+  .primary-alert { padding: 22px 18px; }
+  .primary-alert-aqi { display: none; }
+}

@@ -1,0 +1,27 @@
+/* Charts */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 22px;
+}
+.chart-card {
+  padding: 26px 22px;
+}
+.chart-card h3 { margin-bottom: 4px; font-size: 1rem; }
+.chart-sub { color: #8BA8C4; font-size: 0.8rem; margin-bottom: 18px; }
+.chart-full { grid-column: 1 / -1; }
+
+/* Recharts tooltip override */
+.chart-tooltip {
+  background: rgba(8,15,31,0.95);
+  border: 1px solid rgba(141,216,255,0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+}
+.ct-label { color: #8BA8C4; margin-bottom: 4px; font-size: 0.78rem; }
+
+@media (max-width: 768px) {
+  .charts-grid { grid-template-columns: 1fr; }
+  .chart-full  { grid-column: auto; }
+}
