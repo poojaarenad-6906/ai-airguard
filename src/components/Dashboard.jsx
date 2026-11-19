@@ -39,19 +39,74 @@ function PollutantBar({ label, value, max, unit, color }) {
   );
 }
 
-export default function Dashboard({ data, agentResults, onNewSearch, onNavigate, searchHistory, onHistorySearch }) {
+export default function Dashboard({ data, agentResults, onNewSearch, onNavigate, searchHistory, onHistorySearch, user, onProfileClick }) {
   const [activeTab, setActiveTab] = useState('overview');
 
   if (!data) return null;
   const level = getAqiLevel(data.aqi);
   const monitoring = agentResults?.monitoring;
-  const source = agentResults?.source;
-  const health = agentResults?.health;
+  const source     = agentResults?.source;
+  const health     = agentResults?.health;
   const environmental = agentResults?.environmental;
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
     <section style={{ paddingTop: 80, paddingBottom: 40 }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
+
+        {/* ── Personalized user banner (shown only when logged in) ── */}
+        {user && (
+          <div className="fade-in" style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '14px 20px', borderRadius: 12, marginBottom: 20,
+            background: 'linear-gradient(135deg, rgba(56,189,248,0.08), rgba(14,165,233,0.05))',
+            border: '1px solid rgba(56,189,248,0.2)',
+            flexWrap: 'wrap', gap: 12,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {/* Avatar */}
+              <div style={{
+                width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
+                background: 'linear-gradient(135deg,#38BDF8,#0ea5e9)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '1rem', fontWeight: 800, color: '#0F1E32',
+                boxShadow: '0 0 12px rgba(56,189,248,0.3)',
+              }}>
+                {(user.full_name || user.email || 'U')[0].toUpperCase()}
+              </div>
+              <div>
+                <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem' }}>
+                  {greeting}, <span style={{ color: '#38BDF8' }}>{user.full_name?.split(' ')[0] || 'there'}</span>! 👋
+                </div>
+                <div style={{ color: '#8BA8C4', fontSize: '0.78rem', marginTop: 1 }}>
+                  📍 Viewing air quality for <strong style={{ color: '#DBEAFE' }}>{data.location || data.city}</strong>
+                  {user.city && user.city.toLowerCase() !== (data.location || data.city).toLowerCase() && (
+                    <span style={{ marginLeft: 8, color: '#8BA8C4' }}>
+                      · Your home: <span style={{ color: '#38BDF8' }}>{user.city}</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {user.notify_enabled ? (
+                <span style={{ padding: '3px 10px', borderRadius: 20, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#22C55E', fontSize: '0.72rem', fontWeight: 600 }}>
+                  🔔 Alerts on (AQI &gt; {user.notify_threshold || 150})
+                </span>
+              ) : (
+                <span style={{ padding: '3px 10px', borderRadius: 20, background: 'rgba(53,81,109,0.3)', border: '1px solid #35516D', color: '#8BA8C4', fontSize: '0.72rem' }}>
+                  🔕 Alerts off
+                </span>
+              )}
+              <button onClick={onProfileClick}
+                style={{ padding: '5px 14px', borderRadius: 8, background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', color: '#38BDF8', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>
+                👤 My Profile
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
@@ -102,7 +157,7 @@ export default function Dashboard({ data, agentResults, onNewSearch, onNavigate,
                 {[50, 100, 200, 300, 400].map((threshold, i) => {
                   const labels = ['Good', 'Satisfactory', 'Moderate', 'Poor', 'Very Poor'];
                   const colors = ['#22C55E', '#84CC16', '#EAB308', '#F97316', '#EF4444'];
-                  const isActive = data.aqi <= threshold && (i === 0 || data.aqi > [0,50,100,200,300][i]);
+                  const isActive = data.aqi <= threshold && (i === 0 || data.aqi > [0, 50, 100, 200, 300][i]);
                   return (
                     <div key={threshold} style={{ flex: 1, textAlign: 'center' }}>
                       <div style={{ height: 8, borderRadius: 4, background: colors[i], opacity: isActive ? 1 : 0.25, transform: isActive ? 'scaleY(1.5)' : 'scaleY(1)', transition: 'all 0.3s' }} />
@@ -112,7 +167,6 @@ export default function Dashboard({ data, agentResults, onNewSearch, onNavigate,
                 })}
               </div>
 
-              {/* Primary source & weather */}
               {data.primarySource && (
                 <div style={{ marginTop: 16, padding: '10px 14px', background: 'rgba(56,189,248,0.07)', borderRadius: 8, border: '1px solid rgba(56,189,248,0.2)' }}>
                   <span style={{ color: '#8DD8FF', fontSize: '0.82rem' }}>🏭 Primary Source: </span>
@@ -155,7 +209,6 @@ export default function Dashboard({ data, agentResults, onNewSearch, onNavigate,
         {/* Agent Results Grid */}
         {agentResults && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
-            {/* Health */}
             {health && (
               <div className="glass-card" style={{ borderColor: 'rgba(34,197,94,0.3)' }}>
                 <h3 style={{ fontSize: '0.9rem', marginBottom: 12 }}>🩺 Health Advisory</h3>
@@ -177,7 +230,6 @@ export default function Dashboard({ data, agentResults, onNewSearch, onNavigate,
               </div>
             )}
 
-            {/* Source Analysis */}
             {source && (
               <div className="glass-card" style={{ borderColor: 'rgba(234,179,8,0.3)' }}>
                 <h3 style={{ fontSize: '0.9rem', marginBottom: 12 }}>🏭 Source Analysis</h3>
@@ -193,7 +245,6 @@ export default function Dashboard({ data, agentResults, onNewSearch, onNavigate,
               </div>
             )}
 
-            {/* Environmental Score */}
             {environmental && (
               <div className="glass-card" style={{ borderColor: 'rgba(141,216,255,0.3)' }}>
                 <h3 style={{ fontSize: '0.9rem', marginBottom: 12 }}>🌍 Environmental Score</h3>
@@ -216,10 +267,10 @@ export default function Dashboard({ data, agentResults, onNewSearch, onNavigate,
         {/* Quick nav */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
           {[
-            { icon: '🗺️', label: 'Pollution Map',    sec: 'map' },
-            { icon: '🚗', label: 'AirSafe Journey',  sec: 'journey' },
-            { icon: '📈', label: 'AQI Trends',       sec: 'charts' },
-            { icon: '🚨', label: 'Smart Alerts',     sec: 'alerts' },
+            { icon: '🗺️', label: 'Pollution Map',   sec: 'map' },
+            { icon: '🚗', label: 'AirSafe Journey', sec: 'journey' },
+            { icon: '📈', label: 'AQI Trends',      sec: 'charts' },
+            { icon: '🚨', label: 'Smart Alerts',    sec: 'alerts' },
           ].map(n => (
             <button key={n.sec} className="glass-card btn-ghost"
               onClick={() => onNavigate(n.sec)}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const NAV_ITEMS = [
   { id: 'home',       label: 'Home',       icon: '🏠' },
@@ -16,7 +16,20 @@ const NAV_ITEMS = [
 ];
 
 export default function Navbar({ activeSection, onNavigate, hasData, user, onLoginClick, onLogout, onProfileClick }) {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen]         = useState(false);
+  const [profileDropdown, setProfileDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setProfileDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <nav style={{
@@ -74,18 +87,20 @@ export default function Navbar({ activeSection, onNavigate, hasData, user, onLog
         {/* Auth controls — right side */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 12 }}>
           {user ? (
-            <>
-              {/* Avatar / Profile button */}
-              <button onClick={onProfileClick}
+            /* ── Profile dropdown ── */
+            <div ref={dropdownRef} style={{ position: 'relative' }}>
+              <button
+                onClick={() => setProfileDropdown(p => !p)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)',
+                  background: profileDropdown ? 'rgba(56,189,248,0.2)' : 'rgba(56,189,248,0.1)',
+                  border: '1px solid rgba(56,189,248,0.3)',
                   borderRadius: 8, padding: '5px 12px', cursor: 'pointer',
                   color: '#38BDF8', fontSize: '0.82rem', fontWeight: 600,
                   transition: 'all 0.2s',
                 }}
                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(56,189,248,0.2)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(56,189,248,0.1)'}
+                onMouseLeave={e => !profileDropdown && (e.currentTarget.style.background = 'rgba(56,189,248,0.1)')}
               >
                 <div style={{
                   width: 26, height: 26, borderRadius: '50%',
@@ -98,23 +113,66 @@ export default function Navbar({ activeSection, onNavigate, hasData, user, onLog
                 <span style={{ maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {user.full_name?.split(' ')[0] || 'Profile'}
                 </span>
+                <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>{profileDropdown ? '▲' : '▼'}</span>
               </button>
 
-              {/* Logout */}
-              <button onClick={onLogout}
-                style={{
-                  background: 'transparent', border: '1px solid rgba(239,68,68,0.3)',
-                  borderRadius: 8, padding: '5px 10px', cursor: 'pointer',
-                  color: '#EF4444', fontSize: '0.78rem',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.5)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)'; }}
-                title="Sign out"
-              >
-                ⬛ Sign out
-              </button>
-            </>
+              {/* Dropdown menu */}
+              {profileDropdown && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                  background: '#183B63', border: '1px solid #35516D',
+                  borderRadius: 10, minWidth: 200,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                  overflow: 'hidden', zIndex: 2000,
+                }}>
+                  {/* User info header */}
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(53,81,109,0.5)', background: 'rgba(15,30,50,0.6)' }}>
+                    <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.88rem' }}>{user.full_name}</div>
+                    <div style={{ color: '#8BA8C4', fontSize: '0.75rem', marginTop: 2 }}>{user.email}</div>
+                    <div style={{ color: '#38BDF8', fontSize: '0.72rem', marginTop: 2 }}>📍 {user.city || 'Bengaluru'}</div>
+                  </div>
+
+                  {/* Menu items */}
+                  {[
+                    { icon: '👤', label: 'My Profile', action: () => { onProfileClick(); setProfileDropdown(false); } },
+                    { icon: '🔔', label: 'Notifications', action: () => { onProfileClick(); setProfileDropdown(false); } },
+                    { icon: '🛡️', label: 'Guardrails', action: () => { onNavigate('guardrails'); setProfileDropdown(false); } },
+                    { icon: '📋', label: 'Evaluation', action: () => { onNavigate('evaluation'); setProfileDropdown(false); } },
+                  ].map(item => (
+                    <button key={item.label} onClick={item.action}
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '10px 16px', background: 'none', border: 'none',
+                        color: '#DBEAFE', fontSize: '0.85rem', cursor: 'pointer',
+                        transition: 'background 0.15s', textAlign: 'left',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(56,189,248,0.08)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                    >
+                      <span>{item.icon}</span>
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+
+                  {/* Sign out */}
+                  <div style={{ borderTop: '1px solid rgba(53,81,109,0.5)' }}>
+                    <button onClick={() => { onLogout(); setProfileDropdown(false); }}
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '10px 16px', background: 'none', border: 'none',
+                        color: '#EF4444', fontSize: '0.85rem', cursor: 'pointer',
+                        transition: 'background 0.15s', textAlign: 'left',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                    >
+                      <span>🚪</span>
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <button onClick={onLoginClick}
               style={{

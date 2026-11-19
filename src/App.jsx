@@ -129,12 +129,21 @@ export default function App() {
   function handleAuthSuccess(loggedInUser) {
     setUser(loggedInUser);
     setAuthModal(false);
+    // Auto-search the user's preferred city after login
+    if (loggedInUser.city && loggedInUser.city !== 'Bengaluru') {
+      handleSearch(loggedInUser.city);
+    }
   }
 
   function handleLogout() {
     logout();
     setUser(null);
     setShowProfile(false);
+    // Always return to home on logout
+    setActiveSection('home');
+    setAirData(null);
+    setAgentResults(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function handleProfileUpdate(updatedUser) {
@@ -198,6 +207,7 @@ export default function App() {
           data={airData} agentResults={agentResults}
           onNewSearch={handleNewSearch} onNavigate={navigate}
           searchHistory={searchHistory} onHistorySearch={handleSearch}
+          user={user} onProfileClick={() => setShowProfile(true)}
         />
       )}
 

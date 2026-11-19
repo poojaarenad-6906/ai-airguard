@@ -89,6 +89,7 @@ export default function UserProfile({ user, onUpdate, onClose }) {
 
   const TABS = [
     { id: 'profile',   label: '👤 Profile' },
+    { id: 'account',   label: '🏷️ Account' },
     { id: 'alerts_pref', label: '🔔 Notifications' },
     { id: 'password',  label: '🔐 Password' },
     { id: 'alerts',    label: '📜 Alert History' },
@@ -191,6 +192,72 @@ export default function UserProfile({ user, onUpdate, onClose }) {
               <button className="btn btn-primary" onClick={savePassword} disabled={saving} style={{ width: '100%' }}>
                 {saving ? <><span className="spinner-sm" /> Updating…</> : '🔐 Update Password'}
               </button>
+            </div>
+          )}
+
+          {/* Account details tab */}
+          {tab === 'account' && (
+            <div>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ color: '#8DD8FF', fontWeight: 700, fontSize: '0.95rem', marginBottom: 14 }}>🏷️ Account Details</div>
+                {/* Email — read-only */}
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: 'block', color: '#8BA8C4', fontSize: '0.82rem', marginBottom: 5, fontWeight: 600 }}>Email Address</label>
+                  <div style={{ background: '#0d2847', border: '1px solid #35516D', borderRadius: 8, padding: '10px 16px', fontSize: '0.9rem', color: '#DBEAFE', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>📧</span>
+                    <span>{user.email}</span>
+                    <span style={{ marginLeft: 'auto', background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', borderRadius: 4, padding: '2px 8px', fontSize: '0.7rem', color: '#38BDF8', fontWeight: 700 }}>VERIFIED</span>
+                  </div>
+                  <p style={{ color: '#8BA8C4', fontSize: '0.75rem', marginTop: 5 }}>Email address cannot be changed. Contact support if needed.</p>
+                </div>
+
+                {/* Phone — read-only display */}
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: 'block', color: '#8BA8C4', fontSize: '0.82rem', marginBottom: 5, fontWeight: 600 }}>Phone Number</label>
+                  <div style={{ background: '#0d2847', border: '1px solid #35516D', borderRadius: 8, padding: '10px 16px', fontSize: '0.9rem', color: user.phone ? '#DBEAFE' : '#4A6682', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>📱</span>
+                    <span>{user.phone || 'Not set — add it in the Profile tab'}</span>
+                  </div>
+                </div>
+
+                {/* Member since */}
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: 'block', color: '#8BA8C4', fontSize: '0.82rem', marginBottom: 5, fontWeight: 600 }}>Member Since</label>
+                  <div style={{ background: '#0d2847', border: '1px solid #35516D', borderRadius: 8, padding: '10px 16px', fontSize: '0.9rem', color: '#DBEAFE', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>📅</span>
+                    <span>{user.created_at ? new Date(user.created_at + (user.created_at.endsWith('Z') ? '' : 'Z')).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</span>
+                  </div>
+                </div>
+
+                {/* Preferred city */}
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: 'block', color: '#8BA8C4', fontSize: '0.82rem', marginBottom: 5, fontWeight: 600 }}>Preferred City</label>
+                  <div style={{ background: '#0d2847', border: '1px solid #35516D', borderRadius: 8, padding: '10px 16px', fontSize: '0.9rem', color: '#DBEAFE', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>📍</span>
+                    <span>{user.city || 'Bengaluru'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Account stats */}
+              <div style={{ color: '#8DD8FF', fontWeight: 700, fontSize: '0.95rem', marginBottom: 12 }}>📊 Account Stats</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {[
+                  { label: 'Notifications', value: user.notify_enabled ? '✅ Enabled' : '❌ Disabled', icon: '🔔' },
+                  { label: 'Alert Threshold', value: `AQI ≥ ${user.notify_threshold ?? 150}`, icon: '⚠️' },
+                  { label: 'Account Type', value: 'Free', icon: '🏷️' },
+                  { label: 'AI Model', value: 'IBM Granite', icon: '🤖' },
+                ].map(stat => (
+                  <div key={stat.label} style={{ background: '#0d2847', border: '1px solid #35516D', borderRadius: 10, padding: '12px 14px' }}>
+                    <div style={{ color: '#8BA8C4', fontSize: '0.75rem', marginBottom: 4 }}>{stat.icon} {stat.label}</div>
+                    <div style={{ color: '#DBEAFE', fontWeight: 700, fontSize: '0.88rem' }}>{stat.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ marginTop: 16, padding: '10px 14px', borderRadius: 8, background: 'rgba(56,189,248,0.04)', border: '1px solid rgba(56,189,248,0.15)', fontSize: '0.78rem', color: '#8BA8C4' }}>
+                🛡️ Your data is stored securely and never shared. Passwords are bcrypt-hashed. JWT tokens expire after 7 days.
+              </div>
             </div>
           )}
 

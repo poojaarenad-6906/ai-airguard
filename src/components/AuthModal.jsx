@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { login, register } from '../services/authService';
+import { useState, useEffect } from 'react';
+import { login, register, forgotPassword, resetPassword } from '../services/authService';
 
 const INPUT = {
   background: 'var(--card-dark)', color: 'var(--text)',
@@ -145,6 +145,73 @@ function RegisterForm({ onSuccess, onSwitchToLogin }) {
   );
 }
 
+// ═══════════════ RESET PASSWORD (from email link) ═══════════════
+
+function ResetPasswordForm({ token, onBack }) {
+  const [newPassword, setNewPassword]       = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading]               = useState(false);
+  const [done, setDone]                     = useState(false);
+  const [error, setError]                   = useState('');
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
+    if (newPassword.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    setLoading(true); setError('');
+    try {
+      await resetPassword(token, newPassword);
+      // Clear the URL param after success
+      window.history.replaceState({}, '', window.location.pathname);
+      setDone(true);
+    } catch (err) {
+      setError(err.message || 'Failed to reset password. The link may have expired.');
+    } finally { setLoading(false); }
+  }
+
+  if (done) {
+    return (
+      <div style={{ textAlign: 'center', padding: '8px 0' }}>
+        <div style={{ fontSize: '3rem', marginBottom: 12 }}>✅</div>
+        <h3 style={{ marginBottom: 10, color: '#8DD8FF' }}>Password Reset!</h3>
+        <p style={{ color: '#8BA8C4', fontSize: '0.88rem', marginBottom: 20 }}>
+          Your password has been updated successfully. You can now sign in with your new password.
+        </p>
+        <button className="btn btn-primary" onClick={onBack} style={{ width: '100%' }}>🔐 Sign In Now</button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(56,189,248,0.06)', border: '1px solid rgba(56,189,248,0.2)', fontSize: '0.82rem', color: '#8BA8C4', marginBottom: 16 }}>
+        🔑 Enter your new password below. The reset link is valid for 1 hour.
+      </div>
+      <Field label="New Password" type="password" value={newPassword} onChange={setNewPassword}
+        placeholder="Min. 8 characters" required autoComplete="new-password" />
+      <Field label="Confirm New Password" type="password" value={confirmPassword} onChange={setConfirmPassword}
+        placeholder="Repeat new password" required autoComplete="new-password" />
+
+      {error && (
+        <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.08)',
+          border: '1px solid rgba(239,68,68,0.3)', color: '#EF4444', fontSize: '0.85rem', marginBottom: 14 }}>
+          ❌ {error}
+        </div>
+      )}
+
+      <button type="submit" className="btn btn-primary" style={{ width: '100%', marginBottom: 12 }} disabled={loading}>
+        {loading ? <><span className="spinner-sm" /> Resetting…</> : '🔐 Reset Password'}
+      </button>
+      <div style={{ textAlign: 'center' }}>
+        <button type="button" onClick={onBack}
+          style={{ background: 'none', border: 'none', color: '#8BA8C4', fontSize: '0.85rem', cursor: 'pointer' }}>
+          ← Back to Sign In
+        </button>
+      </div>
+    </form>
+  );
+}
+
 // ═══════════════ FORGOT PASSWORD ═══════════════
 
 function ForgotPasswordForm({ onBack }) {
@@ -158,7 +225,6 @@ function ForgotPasswordForm({ onBack }) {
     if (!email) { setError('Please enter your email address.'); return; }
     setLoading(true); setError('');
     try {
-      const { forgotPassword } = await import('../services/authService');
       await forgotPassword(email);
       setSent(true);
     } catch (err) {
@@ -210,14 +276,26 @@ function ForgotPasswordForm({ onBack }) {
 // ═══════════════ AUTH MODAL ═══════════════
 
 export default function AuthModal({ onSuccess, onClose, initialTab = 'login' }) {
-  const [tab, setTab] = useState(initialTab); // 'login' | 'register' | 'forgot'
+  const [tab, setTab] = useState(initialTab); // 'login' | 'register' | 'forgot' | 'reset'
+  const [resetToken, setResetToken] = useState('');
+
+  // On mount, check URL for reset_token and switch to reset tab
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('reset_token');
+    if (token) {
+      setResetToken(token);
+      setTab('reset');
+    }
+  }, []);
 
   const titles = {
     login:    { icon: '🔐', title: 'Welcome Back', sub: 'Sign in to your AI AirGuard account' },
     register: { icon: '✨', title: 'Create Account', sub: 'Join AI AirGuard for personalised alerts' },
     forgot:   { icon: '🔑', title: 'Reset Password', sub: "We'll send a reset link to your email" },
+    reset:    { icon: '🔐', title: 'Set New Password', sub: 'Create a new secure password for your account' },
   };
-  const { icon, title, sub } = titles[tab];
+  const { icon, title, sub } = titles[tab] || titles.login;
 
   return (
     <div style={{
@@ -271,6 +349,7 @@ export default function AuthModal({ onSuccess, onClose, initialTab = 'login' }) 
           {tab === 'login'    && <LoginForm onSuccess={onSuccess} onForgot={() => setTab('forgot')} onSwitchToRegister={() => setTab('register')} />}
           {tab === 'register' && <RegisterForm onSuccess={onSuccess} onSwitchToLogin={() => setTab('login')} />}
           {tab === 'forgot'   && <ForgotPasswordForm onBack={() => setTab('login')} />}
+          {tab === 'reset'    && <ResetPasswordForm token={resetToken} onBack={() => setTab('login')} />}
         </div>
       </div>
     </div>
