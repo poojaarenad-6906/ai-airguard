@@ -8,7 +8,8 @@ Uses SQLite (zero-config, file-based) so no MySQL setup is needed.
 import sqlite3, bcrypt, jwt, os, secrets, re
 from datetime import datetime, timedelta, timezone
 
-DB_PATH  = os.path.join(os.path.dirname(__file__), "airguard.db")
+# On Vercel serverless, only /tmp/ is writable. Allow override via env var.
+DB_PATH  = os.environ.get("AIRGUARD_DB_PATH") or os.path.join(os.path.dirname(__file__), "airguard.db")
 JWT_EXPIRY_HOURS = 24 * 7   # 7-day session
 
 def _jwt_secret():

@@ -16,12 +16,14 @@ from email_service import send_pollution_alert, send_welcome_email, send_reset_e
 auth_module.init_db()
 
 # Resolve the React build directory (../dist relative to this backend/ folder)
+# On Vercel, React build is served by CDN — static_folder is only used locally.
 _HERE = os.path.dirname(os.path.abspath(__file__))
 DIST_DIR = os.path.join(_HERE, "..", "dist")
+_SERVING_STATIC = os.path.isdir(DIST_DIR)
 
 app = Flask(
     __name__,
-    static_folder=DIST_DIR,
+    static_folder=DIST_DIR if _SERVING_STATIC else None,
     static_url_path="",
 )
 CORS(app, origins=["*"])
