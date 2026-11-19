@@ -12,8 +12,11 @@ import CitizenReport from './components/CitizenReport';
 import GuardrailPanel from './components/GuardrailPanel';
 import EvaluationDashboard from './components/EvaluationDashboard';
 import AgentPanel from './components/AgentPanel';
+import AuthModal from './components/AuthModal';
+import UserProfile from './components/UserProfile';
 import { fetchAirQuality, fetchHotspotData } from './services/airQualityService';
 import { orchestrateAgents } from './services/agentService';
+import { getStoredUser, fetchMe, logout, checkAndTriggerAlerts } from './services/authService';
 
 function LoadingOverlay({ city }) {
   return (
@@ -42,20 +45,46 @@ function LoadingOverlay({ city }) {
 }
 
 export default function App() {
-  const [activeSection, setActiveSection] = useState('home');
-  const [airData, setAirData]           = useState(null);
-  const [agentResults, setAgentResults] = useState(null);
-  const [hotspots, setHotspots]         = useState([]);
-  const [loading, setLoading]           = useState(false);
-  const [loadingCity, setLoadingCity]   = useState('');
-  const [error, setError]               = useState('');
-  const [searchHistory, setSearchHistory] = useState([]);
+  const [activeSection, setActiveSection]   = useState('home');
+  const [airData, setAirData]               = useState(null);
+  const [agentResults, setAgentResults]     = useState(null);
+  const [hotspots, setHotspots]             = useState([]);
+  const [loading, setLoading]               = useState(false);
+  const [loadingCity, setLoadingCity]       = useState('');
+  const [error, setError]                   = useState('');
+  const [searchHistory, setSearchHistory]   = useState([]);
+
+  // ── Auth state ────────────────────────────────────────────────────────────
+  const [user, setUser]                     = useState(null);
+  const [authModal, setAuthModal]           = useState(false);
+  const [authTab, setAuthTab]               = useState('login');
+  const [showProfile, setShowProfile]       = useState(false);
+
+  // Restore session from localStorage on mount
+  useEffect(() => {
+    const stored = getStoredUser();
+    if (stored) {
+      setUser(stored);
+      // Re-validate token against backend in background
+      fetchMe().then(u => { if (u) setUser(u); }).catch(() => { logout(); setUser(null); });
+    }
+  }, []);
+
+  // Check URL for reset_token param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reset_token')) {
+      setAuthTab('login'); // Show login with note; actual reset handled inside AuthModal
+      setAuthModal(true);
+    }
+  }, []);
 
   // Load initial hotspot data
   useEffect(() => {
     fetchHotspotData().then(setHotspots).catch(() => {});
   }, []);
 
+  // ── Location search ───────────────────────────────────────────────────────
   const handleSearch = useCallback(async (locationName, lat, lng) => {
     setLoading(true);
     setLoadingCity(locationName);
@@ -65,9 +94,10 @@ export default function App() {
       setAirData(data);
 
       // Run agents in background
-      orchestrateAgents(data, hotspots).then(results => {
-        setAgentResults(results);
-      }).catch(console.warn);
+      orchestrateAgents(data, hotspots).then(results => setAgentResults(results)).catch(console.warn);
+
+      // Trigger email alerts for registered users (non-blocking)
+      checkAndTriggerAlerts(data);
 
       setSearchHistory(prev => {
         const filtered = prev.filter(h => h.city.toLowerCase() !== data.city.toLowerCase());
@@ -95,13 +125,55 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  // ── Auth handlers ─────────────────────────────────────────────────────────
+  function handleAuthSuccess(loggedInUser) {
+    setUser(loggedInUser);
+    setAuthModal(false);
+  }
+
+  function handleLogout() {
+    logout();
+    setUser(null);
+    setShowProfile(false);
+  }
+
+  function handleProfileUpdate(updatedUser) {
+    setUser(updatedUser);
+  }
+
   const DATA_SECTIONS = ['dashboard', 'charts', 'alerts'];
 
   return (
     <>
       {loading && <LoadingOverlay city={loadingCity} />}
 
-      <Navbar activeSection={activeSection} onNavigate={navigate} hasData={!!airData} />
+      {/* Auth modal */}
+      {authModal && (
+        <AuthModal
+          onSuccess={handleAuthSuccess}
+          onClose={() => setAuthModal(false)}
+          initialTab={authTab}
+        />
+      )}
+
+      {/* User profile modal */}
+      {showProfile && user && (
+        <UserProfile
+          user={user}
+          onUpdate={handleProfileUpdate}
+          onClose={() => setShowProfile(false)}
+        />
+      )}
+
+      <Navbar
+        activeSection={activeSection}
+        onNavigate={navigate}
+        hasData={!!airData}
+        user={user}
+        onLoginClick={() => { setAuthTab('login'); setAuthModal(true); }}
+        onLogout={handleLogout}
+        onProfileClick={() => setShowProfile(true)}
+      />
 
       {error && !loading && (
         <div className="container" style={{ paddingTop: 100 }}>
@@ -173,7 +245,8 @@ export default function App() {
 
       {activeSection === 'agents' && (
         <div style={{ paddingTop: 80 }}>
-          <AgentPanel agentResults={agentResults} airData={airData} onRunAgents={() => airData && orchestrateAgents(airData, hotspots).then(setAgentResults)} />
+          <AgentPanel agentResults={agentResults} airData={airData}
+            onRunAgents={() => airData && orchestrateAgents(airData, hotspots).then(setAgentResults)} />
         </div>
       )}
 
@@ -190,7 +263,7 @@ export default function App() {
       )}
 
       {/* Show data sections from home if no data */}
-      {DATA_SECTIONS.includes(activeSection) && !airData && activeSection !== 'map' && (
+      {DATA_SECTIONS.includes(activeSection) && !airData && (
         <div className="container" style={{ paddingTop: 120, textAlign: 'center' }}>
           <div className="glass-card" style={{ padding: '48px', maxWidth: 480, margin: '0 auto' }}>
             <div style={{ fontSize: '3rem', marginBottom: 16 }}>📍</div>

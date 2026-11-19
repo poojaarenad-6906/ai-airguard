@@ -1,21 +1,21 @@
 import { useState } from 'react';
 
 const NAV_ITEMS = [
-  { id: 'home',       label: 'Home',          icon: '🏠' },
-  { id: 'dashboard',  label: 'Dashboard',     icon: '📊' },
-  { id: 'map',        label: 'Live Map',      icon: '🗺️' },
-  { id: 'journey',    label: 'AirSafe',       icon: '🚗' },
-  { id: 'charts',     label: 'Trends',        icon: '📈' },
-  { id: 'alerts',     label: 'Alerts',        icon: '🚨' },
-  { id: 'assistant',  label: 'AI Chat',       icon: '🤖' },
-  { id: 'agents',     label: 'Agents',        icon: '⚙️' },
-  { id: 'simulator',  label: 'Simulator',     icon: '🔬' },
-  { id: 'guardrails', label: 'Guardrails',    icon: '🛡️' },
-  { id: 'evaluation', label: 'Evaluation',    icon: '📋' },
-  { id: 'report',     label: 'Report',        icon: '📝' },
+  { id: 'home',       label: 'Home',       icon: '🏠' },
+  { id: 'dashboard',  label: 'Dashboard',  icon: '📊' },
+  { id: 'map',        label: 'Live Map',   icon: '🗺️' },
+  { id: 'journey',    label: 'AirSafe',    icon: '🚗' },
+  { id: 'charts',     label: 'Trends',     icon: '📈' },
+  { id: 'alerts',     label: 'Alerts',     icon: '🚨' },
+  { id: 'assistant',  label: 'AI Chat',    icon: '🤖' },
+  { id: 'agents',     label: 'Agents',     icon: '⚙️' },
+  { id: 'simulator',  label: 'Simulator',  icon: '🔬' },
+  { id: 'guardrails', label: 'Guardrails', icon: '🛡️' },
+  { id: 'evaluation', label: 'Evaluation', icon: '📋' },
+  { id: 'report',     label: 'Report',     icon: '📝' },
 ];
 
-export default function Navbar({ activeSection, onNavigate, hasData }) {
+export default function Navbar({ activeSection, onNavigate, hasData, user, onLoginClick, onLogout, onProfileClick }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -26,11 +26,10 @@ export default function Navbar({ activeSection, onNavigate, hasData }) {
       boxShadow: '0 2px 20px rgba(0,0,0,0.3)',
     }}>
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 20px', display: 'flex', alignItems: 'center', height: 64 }}>
+
         {/* Logo */}
-        <div
-          style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', flexShrink: 0 }}
-          onClick={() => onNavigate('home')}
-        >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', flexShrink: 0 }}
+          onClick={() => onNavigate('home')}>
           <div style={{
             width: 36, height: 36, borderRadius: 10,
             background: 'linear-gradient(135deg, #38BDF8, #0ea5e9)',
@@ -43,16 +42,14 @@ export default function Navbar({ activeSection, onNavigate, hasData }) {
           </div>
         </div>
 
-        {/* Desktop nav */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginLeft: 'auto', flexWrap: 'nowrap', overflow: 'auto' }}>
+        {/* Desktop nav items */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginLeft: 20, flex: 1, flexWrap: 'nowrap', overflow: 'auto' }}>
           {NAV_ITEMS.map(item => {
-            const isActive = activeSection === item.id;
+            const isActive  = activeSection === item.id;
             const needsData = ['dashboard', 'charts', 'alerts'].includes(item.id);
-            const disabled = needsData && !hasData;
+            const disabled  = needsData && !hasData;
             return (
-              <button
-                key={item.id}
-                onClick={() => !disabled && onNavigate(item.id)}
+              <button key={item.id} onClick={() => !disabled && onNavigate(item.id)}
                 style={{
                   background: isActive ? 'rgba(56,189,248,0.15)' : 'transparent',
                   border: isActive ? '1px solid rgba(56,189,248,0.4)' : '1px solid transparent',
@@ -68,11 +65,73 @@ export default function Navbar({ activeSection, onNavigate, hasData }) {
                 onMouseLeave={e => !isActive && (e.currentTarget.style.background = 'transparent')}
               >
                 <span style={{ fontSize: '0.9rem' }}>{item.icon}</span>
-                <span style={{ '@media(max-width:1024px)': { display: 'none' } }}>{item.label}</span>
+                <span>{item.label}</span>
               </button>
             );
           })}
         </div>
+
+        {/* Auth controls — right side */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 12 }}>
+          {user ? (
+            <>
+              {/* Avatar / Profile button */}
+              <button onClick={onProfileClick}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)',
+                  borderRadius: 8, padding: '5px 12px', cursor: 'pointer',
+                  color: '#38BDF8', fontSize: '0.82rem', fontWeight: 600,
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(56,189,248,0.2)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(56,189,248,0.1)'}
+              >
+                <div style={{
+                  width: 26, height: 26, borderRadius: '50%',
+                  background: 'linear-gradient(135deg,#38BDF8,#0ea5e9)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.75rem', fontWeight: 800, color: '#0F1E32',
+                }}>
+                  {(user.full_name || user.email || 'U')[0].toUpperCase()}
+                </div>
+                <span style={{ maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {user.full_name?.split(' ')[0] || 'Profile'}
+                </span>
+              </button>
+
+              {/* Logout */}
+              <button onClick={onLogout}
+                style={{
+                  background: 'transparent', border: '1px solid rgba(239,68,68,0.3)',
+                  borderRadius: 8, padding: '5px 10px', cursor: 'pointer',
+                  color: '#EF4444', fontSize: '0.78rem',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.5)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)'; }}
+                title="Sign out"
+              >
+                ⬛ Sign out
+              </button>
+            </>
+          ) : (
+            <button onClick={onLoginClick}
+              style={{
+                background: 'linear-gradient(135deg,#38BDF8,#0ea5e9)',
+                border: 'none', borderRadius: 8, padding: '7px 16px',
+                color: '#0F1E32', fontSize: '0.82rem', fontWeight: 700,
+                cursor: 'pointer', transition: 'all 0.2s',
+                boxShadow: '0 2px 10px rgba(56,189,248,0.3)',
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              🔐 Sign In
+            </button>
+          )}
+        </div>
+
       </div>
     </nav>
   );

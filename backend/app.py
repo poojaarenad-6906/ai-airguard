@@ -2,12 +2,18 @@
 AI AirGuard – Bengaluru Air Quality & Pollution Action Advisor
 Python Flask Backend – Secure IBM Granite / watsonx.ai proxy + AQI data
 Serves the React build from dist/ so the whole app runs on ONE port (5000).
+Auth: JWT + SQLite (zero-config). Email: SMTP via email_service.py.
 """
 
 from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 import os, time, random, math
 from datetime import datetime
+import auth as auth_module
+from email_service import send_pollution_alert, send_welcome_email, send_reset_email
+
+# Initialise SQLite database on startup
+auth_module.init_db()
 
 # Resolve the React build directory (../dist relative to this backend/ folder)
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -273,6 +279,124 @@ def catch_all(path):
     if os.path.exists(index):
         return send_file(index)
     return jsonify({"error": "React build not found. Run `npm run build`."}), 404
+
+# ── Auth helper ────────────────────────────────────────────────────────────────
+
+def _require_auth():
+    """Extract and verify JWT from Authorization header. Returns (user, error_response)."""
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header.replace("Bearer ", "").strip()
+    if not token:
+        return None, (jsonify({"error": "Authentication required"}), 401)
+    user = auth_module.verify_token(token)
+    if not user:
+        return None, (jsonify({"error": "Invalid or expired session. Please log in again."}), 401)
+    return user, None
+
+# ── Auth routes ────────────────────────────────────────────────────────────────
+
+@app.route("/api/auth/register", methods=["POST"])
+def auth_register():
+    data = request.get_json(force=True) or {}
+    result, err = auth_module.register(data)
+    if err:
+        return jsonify({"error": err}), 400
+    # Send welcome email (non-blocking — ignore failure)
+    try:
+        send_welcome_email(result["user"]["full_name"], result["user"]["email"])
+    except Exception:
+        pass
+    return jsonify({"message": "Account created successfully!", "user": result["user"], "token": result["token"]}), 201
+
+@app.route("/api/auth/login", methods=["POST"])
+def auth_login():
+    data = request.get_json(force=True) or {}
+    result, err = auth_module.login(data)
+    if err:
+        return jsonify({"error": err}), 401
+    return jsonify({"message": "Logged in successfully.", "user": result["user"], "token": result["token"]})
+
+@app.route("/api/auth/me", methods=["GET"])
+def auth_me():
+    user, err_resp = _require_auth()
+    if err_resp:
+        return err_resp
+    return jsonify({"user": user})
+
+@app.route("/api/auth/profile", methods=["PUT"])
+def auth_update_profile():
+    user, err_resp = _require_auth()
+    if err_resp:
+        return err_resp
+    data = request.get_json(force=True) or {}
+    updated, err = auth_module.update_profile(user["id"], data)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify({"message": "Profile updated.", "user": updated})
+
+@app.route("/api/auth/forgot-password", methods=["POST"])
+def auth_forgot_password():
+    data = request.get_json(force=True) or {}
+    email = (data.get("email") or "").strip()
+    if not email:
+        return jsonify({"error": "Email is required."}), 400
+    token, user_id = auth_module.create_reset_token(email)
+    if user_id:
+        # Fetch email for the found user
+        try:
+            send_reset_email(email, token)
+        except Exception:
+            pass
+    # Always return success to avoid email enumeration
+    return jsonify({"message": "If an account exists for this email, a password reset link has been sent."})
+
+@app.route("/api/auth/reset-password", methods=["POST"])
+def auth_reset_password():
+    data = request.get_json(force=True) or {}
+    token = (data.get("token") or "").strip()
+    new_pw = data.get("newPassword") or ""
+    ok, err = auth_module.reset_password(token, new_pw)
+    if not ok:
+        return jsonify({"error": err}), 400
+    return jsonify({"message": "Password reset successfully. You can now log in."})
+
+@app.route("/api/auth/alerts", methods=["GET"])
+def auth_alert_history():
+    user, err_resp = _require_auth()
+    if err_resp:
+        return err_resp
+    history = auth_module.get_alert_history(user["id"], limit=30)
+    return jsonify({"alerts": history})
+
+@app.route("/api/auth/check-alerts", methods=["POST"])
+def auth_check_alerts():
+    """
+    Called by the frontend when it loads AQI data for a location.
+    If a registered user's city matches and AQI is high enough,
+    send an email alert (rate-limited by cooldown).
+    """
+    data = request.get_json(force=True) or {}
+    location = data.get("location", "")
+    aqi      = int(data.get("aqi", 0))
+    category = data.get("category", "")
+
+    if not location or aqi < 100:
+        return jsonify({"checked": True, "alertsSent": 0})
+
+    users = auth_module.get_users_for_location(location, aqi)
+    sent = 0
+    for u in users:
+        if not auth_module.should_send_alert(u["id"], location):
+            continue
+        ok = send_pollution_alert(u["full_name"], u["email"], location, aqi, category)
+        auth_module.mark_alert_sent(u["id"], location)
+        auth_module.log_alert(u["id"], location, aqi, category,
+                              f"AQI {aqi} ({category}) detected at {location}", email_sent=ok)
+        if ok:
+            sent += 1
+    return jsonify({"checked": True, "alertsSent": sent, "usersChecked": len(users)})
+
+# ── Existing routes ────────────────────────────────────────────────────────────
 
 @app.route("/api/health")
 def health():

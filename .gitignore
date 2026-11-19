@@ -30,3 +30,6 @@ desktop.ini
 # Logs
 *.log
 npm-debug.log*
+
+backend/test_auth.py
+backend/airguard.db

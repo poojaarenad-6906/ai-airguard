@@ -58,9 +58,6 @@ export default function Dashboard({ data, agentResults, onNewSearch, onNavigate,
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
               <h2 style={{ fontSize: '1.6rem' }}>📍 {data.location || data.city}</h2>
-              {data.isDemo && (
-                <span className="demo-badge">⚠️ Demo Data</span>
-              )}
             </div>
             <p style={{ color: '#8BA8C4', fontSize: '0.85rem' }}>
               Updated: {formatDateTime(data.updatedAt)} · Source: {data.dataSource || 'AI AirGuard'}
